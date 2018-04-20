@@ -4,36 +4,42 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
+    android:baselineAligned="false"
     android:orientation="vertical"
+
     android:padding="10dip"
+    android:showAsAction="ifRoom|withText"
+    android:visibility="visible"
     android:weightSum="1">
 
-    <TextView
-        android:id="@+id/textView"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="5dp"
-        android:layout_marginTop="10dip"
+    <LinearLayout
+        android:layout_width="368dp"
+        android:layout_height="match_parent"
         android:layout_weight="0.73"
-        android:fontFamily="serif-monospace"
-        android:text="Image Processing Application:"
-        android:textAlignment="center"
-        android:textAllCaps="true"
-        android:textColor="@color/colorPrimaryDark"
-        android:textSize="18sp"
-        android:textStyle="bold" />
+        android:orientation="horizontal">
 
-    <Spinner
-        android:id="@+id/spinner"
-        android:layout_width="match_parent"
-        android:layout_height="36dp"
-        android:drawSelectorOnTop="true"
-        android:spinnerMode="dropdown" />
+        <Button
+            android:id="@+id/icon"
+            android:layout_width="99dp"
+            android:layout_height="46dp"
+            android:layout_weight="1"
+            android:background="@mipmap/ic_logo"
+            android:textAlignment="textStart" />
+
+        <Spinner
+            android:id="@+id/spinner"
+            android:layout_width="match_parent"
+            android:layout_height="36dp"
+            android:layout_weight="1"
+            android:drawSelectorOnTop="true"
+            android:spinnerMode="dropdown" />
+    </LinearLayout>
 
     <ImageView
         android:id="@+id/imageView"
-        android:layout_width="wrap_content"
-        android:layout_height="276dp"
+        android:layout_width="match_parent"
+        android:layout_height="300dp"
+        android:layout_weight="0.73"
         app:srcCompat="@drawable/test" />
 
     <LinearLayout
@@ -44,100 +50,126 @@
 
         <Button
             android:id="@+id/button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:background="@android:drawable/alert_dark_frame"
-            android:backgroundTint="@color/colorPrimary"
-            android:text="+" />
-
-        <Button
-            android:id="@+id/button2"
             style="@style/Base.TextAppearance.AppCompat.Small"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_gravity="left"
             android:layout_weight="1"
             android:background="@android:drawable/alert_dark_frame"
             android:backgroundTint="@color/colorPrimary"
             android:text="-" />
 
         <Button
+            android:id="@+id/button2"
+            style="@style/Base.TextAppearance.AppCompat.Small"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_weight="1"
+            android:background="@android:drawable/alert_dark_frame"
+            android:backgroundTint="@color/colorPrimary"
+
+            android:text="+" />
+
+        <Button
             android:id="@+id/button_rotation"
-            android:layout_width="20dp"
-            android:layout_height="40dp"
-            android:layout_weight="1"
-            android:background="@android:drawable/ic_menu_rotate"
-            android:backgroundTint="@color/colorAccent"
-            android:textColor="?android:attr/textColorHighlightInverse" />
-
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_weight="0.73"
-        android:orientation="horizontal">
-
-        <Button
-            android:id="@+id/button_gallery"
-            style="@style/Widget.AppCompat.Button.Borderless"
+            style="@style/Base.Widget.AppCompat.Button.Borderless"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="@android:dimen/app_icon_size"
+            android:layout_gravity="right"
+            android:background="@mipmap/ic_launcher_rotation" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
             android:layout_weight="1"
-            android:fontFamily="serif-monospace"
-            android:text="gallery"
-            android:textAppearance="@style/TextAppearance.AppCompat.Button"
-            android:textColor="@color/colorAccent"
-            android:textStyle="bold" />
+            android:orientation="horizontal">
 
-        <Button
-            android:id="@+id/button_camera"
-            style="@android:style/Widget.DeviceDefault.Button.Borderless"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="end"
-            android:layout_weight="1"
-            android:fontFamily="serif-monospace"
-            android:text="camera"
-            android:textAppearance="@style/TextAppearance.AppCompat.Button"
-            android:textColor="@android:color/holo_purple"
-            android:textStyle="bold" />
+            <Button
+                android:id="@+id/reset"
+                style="@style/Widget.AppCompat.Button.Borderless"
+                android:layout_width="wrap_content"
+                android:layout_height="35dp"
+                android:layout_weight="1"
+                android:text="reset"
+                android:textAllCaps="true"
+                android:textAppearance="@style/TextAppearance.AppCompat.Button"
+                android:textColor="?android:attr/colorControlActivated"
+                android:textStyle="bold"
+                android:typeface="monospace" />
 
-    </LinearLayout>
+            <Button
+                android:id="@+id/undo"
+                style="@style/Widget.AppCompat.Button.Borderless"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:text="undo"
+                android:textAllCaps="true"
+                android:textAppearance="@style/TextAppearance.AppCompat.Button"
+                android:textColor="?android:attr/colorPrimaryDark"
+                android:textStyle="bold"
+                android:typeface="monospace"
+                android:visibility="visible" />
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_gravity="end"
-        android:orientation="horizontal">
+            <Button
+                android:id="@+id/redo"
+                style="@style/Widget.AppCompat.Button.Borderless"
+                android:layout_width="wrap_content"
+                android:layout_height="35dp"
+                android:layout_weight="1"
+                android:text="redo"
+                android:textAllCaps="true"
+                android:textAppearance="@style/TextAppearance.AppCompat.Button"
+                android:textColor="?android:attr/colorActivatedHighlight"
+                android:textStyle="bold"
+                android:typeface="monospace"
+                android:visibility="visible" />
 
-        <Button
-            android:id="@+id/button_quit"
-            style="@android:style/Widget.DeviceDefault.Button.Borderless"
-            android:layout_width="100dp"
-            android:layout_height="wrap_content"
-            android:layout_gravity="end"
-            android:layout_weight="1"
-            android:backgroundTint="@android:color/darker_gray"
-            android:fontFamily="serif-monospace"
-            android:text="Quit"
-            android:textAppearance="@style/TextAppearance.AppCompat.Button"
-            android:textColor="?android:attr/textColorHighlight"
-            android:textStyle="bold"
-            android:typeface="monospace" />
-
-        <Button
-            android:id="@+id/button_save"
-            style="@style/Widget.AppCompat.Button.Borderless"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:fontFamily="serif-monospace"
-            android:text="save"
-            android:textColor="@color/colorPrimary"
-            android:textStyle="bold" />
+        </LinearLayout>
 
 
-    </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:orientation="horizontal">
+
+
+
+            <Button
+                android:id="@+id/button_save"
+                style="@style/Widget.AppCompat.Button.Borderless"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:fontFamily="serif-monospace"
+                android:text="save"
+                android:textAllCaps="true"
+                android:textColor="@color/colorPrimary"
+                android:textStyle="bold"
+                android:visibility="visible" />
+
+                <Button
+                    android:id="@+id/button_quit"
+                    style="@android:style/Widget.DeviceDefault.Button.Borderless"
+                    android:layout_width="100dp"
+                    android:layout_height="match_parent"
+                    android:layout_gravity="end"
+                    android:layout_weight="1"
+                    android:backgroundTint="@android:color/darker_gray"
+                    android:fontFamily="serif-monospace"
+                    android:text="Quit"
+                    android:textAllCaps="true"
+                    android:textAppearance="@style/TextAppearance.AppCompat.Button"
+                    android:textColor="?android:attr/textColorHighlight"
+                    android:textStyle="bold"
+                    android:typeface="monospace"
+                    android:visibility="visible" />
+            </LinearLayout>
+
+
 
 </LinearLayout>

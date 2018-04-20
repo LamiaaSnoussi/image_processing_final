@@ -20,9 +20,6 @@ import java.util.Random;
 
 public class Effects {
 
-    //variables
-    public static final int COLOR_MAX = 0xFF;
-
 
     /**
      *  @param bmp
@@ -52,6 +49,8 @@ public class Effects {
         }
 
         result.setPixels(pixels, 0, w, 0, 0, w, h);
+        long end = System.currentTimeMillis();
+         System.out.println(end - start);
 
         return result;
 
@@ -80,8 +79,6 @@ public class Effects {
 
 
     }
-
-    //effects_colorize
 
     /**
 
@@ -171,7 +168,6 @@ public class Effects {
 
     }
 
-    //linear extention
 
     /**
      *  @param bmp
@@ -517,7 +513,7 @@ public class Effects {
             B = Color.blue(pixels[i]);
             B = G = R = (int) (0.3 * R + 0.59 * G + 0.11 * B);
 
-            // Apply the intensity level needed to get filter sepia in each canal
+            // Apply it for each canal's color
             R += 94;
             if (R > 255) {
                 R = 255;
@@ -542,10 +538,11 @@ public class Effects {
     }
 
     /**
-     *
+     *function that decreases/increases the brightness of a bitmap
      * @param bmp
      * @param value
      * @return Bitmap
+     *  @author https://xjaphx.wordpress.com/
      */
 
     public static Bitmap brightness(Bitmap bmp, int value) {
@@ -602,6 +599,13 @@ public class Effects {
     return result;
     }
 
+    /**
+     * function that decreases/increases the contrast of a bitmap
+     * @param bmp
+     * @param value
+     * @return Bitmap
+     *  @author https://xjaphx.wordpress.com/
+     */
 
       public static Bitmap contrast(Bitmap bmp,double value){
         long start = System.currentTimeMillis();
@@ -649,9 +653,12 @@ public class Effects {
 }
     /**
      * @param bmp
+     * gives the bitmap a hand drawing effect
      * @return Bitmap
+     * @author https://xjaphx.wordpress.com/
      *
      */
+
     public static Bitmap sketch(Bitmap bmp) {
         long start = System.currentTimeMillis();
 
@@ -707,6 +714,7 @@ public class Effects {
         }
 
         long end = System.currentTimeMillis();
+         System.out.println("sketch");
         System.out.println(end - start);
 
         return result;

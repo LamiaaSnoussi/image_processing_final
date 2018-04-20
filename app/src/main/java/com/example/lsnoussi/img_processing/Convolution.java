@@ -184,6 +184,78 @@ public class Convolution {
         return result;
     }
 
+    /**
+     *
+     * @param bmp
+     * @return
+     */
+
+    public static Bitmap laplaceFilter(Bitmap bmp){
+
+        Bitmap result = Bitmap.createBitmap(bmp.getWidth(), bmp.getHeight(), bmp.getConfig());
+        result.setDensity(bmp.getDensity());
+        int[] pixel = new int[bmp.getWidth()*bmp.getHeight()];
+        int  masque [] []= new int[][]{{-2, -1,0}, {-1, 1, 1}, {0, 1, 2}};
+        bmp.getPixels(pixel,0,bmp.getWidth(),0,0,bmp.getWidth(),bmp.getHeight());
+        int[] tab = pixel;
+        int n = masque.length/2;
+        for(int i = n; i<bmp.getWidth() - n; i++){
+            for(int j = n; j<bmp.getHeight() - n; j++){
+                tab=Laplace(masque,pixel,i,j,bmp.getWidth(), tab);
+            }
+        }
+        result.setPixels(tab,0,bmp.getWidth(),0,0,bmp.getWidth(),bmp.getHeight());
+        return result;
+    }
+
+    public static int[] Laplace(int[][] masque, int[] p,int i, int j, int largeur, int[] tab){
+        int n = masque.length/2;
+        int rr=0,gg=0,bb=0;
+        for(int k = -n; k<=n; k++) {
+            for (int l = -n; l <= n; l++) {
+                int pp = p[(i + k)  + (j + l) * largeur];
+                int r = Color.red(pp);
+                int g = Color.green(pp);
+                int b = Color.blue(pp);
+                rr = rr + masque[k + n][l + n] * r;
+                gg = gg + masque[k + n][l + n] * g;
+                bb = bb + masque[k + n][l + n] * b;
+            }
+        }
+        if(rr>0){
+            rr = (int)(rr/16);
+            rr = 128 + rr;
+        }
+        if(rr<=0){
+            rr = rr + 2040;
+            rr = (int) rr/16;
+        }
+        if(gg>0){
+            gg = (int) gg/16;
+            gg = 128 + gg;
+        }
+        if(gg<=0){
+            gg = gg + 2040;
+            gg = (int) gg/16;
+        }
+        if(bb>0){
+            bb = (int) bb/16;
+            bb = 128 + bb;
+        }
+        if(bb<=0){
+            bb = bb + 2040;
+            bb = (int) bb/16;
+        }
+        int gris = (int) (rr * 0.3 + gg * 0.59 + bb * 0.11);
+        int encode = Color.rgb(gris, gris, gris);
+        tab[i + j * largeur] = encode;
+        return tab;
+
+
+
+    }
+
+
 
 
 

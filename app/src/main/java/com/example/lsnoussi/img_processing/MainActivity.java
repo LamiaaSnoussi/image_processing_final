@@ -1,45 +1,57 @@
 package com.example.lsnoussi.img_processing;
 
 import android.Manifest;
-import android.app.Activity;
+
+import android.app.WallpaperManager;
 import android.content.ContentResolver;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.PointF;
 import android.graphics.drawable.BitmapDrawable;
 import android.media.ExifInterface;
 import android.net.Uri;
-import android.os.Build;
+
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.StrictMode;
 import android.provider.MediaStore;
 import android.renderscript.RenderScript;
-import android.support.annotation.RequiresApi;
 import android.support.v4.content.ContextCompat;
-import android.util.Log;
+import android.support.v7.app.AppCompatActivity;
+
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+
 import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.Toast;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 
-public class MainActivity extends Activity implements View.OnTouchListener, OnItemSelectedListener {
+public class MainActivity extends AppCompatActivity implements View.OnTouchListener, OnItemSelectedListener {
 
 
     private Bitmap originalBitmap;
@@ -48,15 +60,15 @@ public class MainActivity extends Activity implements View.OnTouchListener, OnIt
     private ImageView imageView1;
     private RenderScript mRS1;
     private RenderScript mRS_final;
+    private Changes changesClass = new Changes();
+
+
 
     // variables for zoom :
        // 1-fingers
     static final int NONE = 0;
     static final int DRAG = 1;
     static final int ZOOM = 2;
-    private static final String TAG = "Touch";
-    @SuppressWarnings("unused")
-    private static final float MIN_ZOOM = 1f, MAX_ZOOM = 1f;
 
       //2-create a matrix
     Matrix matrix = new Matrix();
@@ -66,6 +78,8 @@ public class MainActivity extends Activity implements View.OnTouchListener, OnIt
     PointF start = new PointF();
     PointF mid = new PointF();
     float oldDist = 1f;
+    private float[] lastEvent = null;
+    private float d = 0f;
 
     // variables : save and load a picture :
     private  static  final  int  CAMERA_REQUEST = 1888;
@@ -95,16 +109,20 @@ public class MainActivity extends Activity implements View.OnTouchListener, OnIt
         o.inScaled = false;
         o.inMutable = true;
 
+        imageView1 = (ImageView)findViewById(R.id.imageView);
+        originalBitmap =BitmapFactory.decodeResource(getResources(), R.drawable.test, o);
 
-        originalBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.test, o);
-        bmp = originalBitmap.copy(Bitmap.Config.ARGB_8888, true); // copy the original bitmap so we can reset it
+
+        bmp = originalBitmap.copy(Bitmap.Config.ARGB_8888,true); // copy the original bitmap so we can reset it
         bmp.setDensity(originalBitmap.getDensity());
+
         mRS1 = RenderScript.create(this);
-        bmp_final = originalBitmap.copy(Bitmap.Config.ARGB_8888, true);
+
+        bmp_final = (Bitmap) originalBitmap.copy(Bitmap.Config.ARGB_8888, true);
         bmp_final.setDensity(originalBitmap.getDensity());
         mRS_final = RenderScript.create(this);
-        imageView1 = findViewById(R.id.imageView);
         imageView1.setImageBitmap(bmp);
+
 
         // Spinner element
         Spinner spinner = findViewById(R.id.spinner);
@@ -114,7 +132,7 @@ public class MainActivity extends Activity implements View.OnTouchListener, OnIt
 
         // Spinner Drop down elements
         List<String> categories = new ArrayList<String>();
-        categories.add("Menu");
+        categories.add("Drop down to select a filter");
         categories.add("Boost blue");
         categories.add("Boost green");
         categories.add("Boost red");
@@ -130,11 +148,11 @@ public class MainActivity extends Activity implements View.OnTouchListener, OnIt
         categories.add("Histogram gray");
         categories.add("Histogram rgb");
         categories.add("Invert Effect");
+        categories.add("Laplacian Blurr");
         categories.add("OverExposure");
         categories.add("Saturation");
         categories.add("Sepia");
         categories.add("Sketch");
-        categories.add("Reset the picture");
 
         // Creating adapter for spinner
         ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, categories);
@@ -150,29 +168,43 @@ public class MainActivity extends Activity implements View.OnTouchListener, OnIt
         // BUTTON :
 
 
-        Button QuitButton = findViewById(R.id.button_quit);
-        QuitButton.setOnClickListener(new View.OnClickListener() {
+        Button undoButton =  findViewById(R.id.undo);
+        undoButton.setOnClickListener(new View.OnClickListener() {
+
+            public void onClick(View v) {
+                if (Changes.change != -1) {
+                    bmp = changesClass.getLastChange();
+                    imageView1.setImageBitmap(bmp);
+                }
+            }
+        });
+        Button redoButton =  findViewById(R.id.redo);
+        redoButton.setOnClickListener(new View.OnClickListener() {
+
+            public void onClick(View v) {
+                if (Changes.change != -1) {
+                    imageView1.setImageBitmap(changesClass.getNextChange());
+
+                }
+            }
+        });
+
+
+        Button resetButton = findViewById(R.id.reset);
+        resetButton.setOnClickListener(new View.OnClickListener() {
+
+            public void onClick(View v) {
+                bmp = bmp_final.copy(Bitmap.Config.ARGB_8888, true);
+                bmp.setDensity(originalBitmap.getDensity());
+                imageView1.setImageBitmap(bmp_final);
+            }
+        });
+
+        Button quitButton = findViewById(R.id.button_quit);
+        quitButton.setOnClickListener(new View.OnClickListener() {
 
             public void onClick(View v) {
                 finish();
-            }
-        });
-
-
-
-        Button cameraButton = findViewById(R.id.button_camera);
-        cameraButton.setOnClickListener(new View.OnClickListener() {
-
-            public void onClick(View v) {
-                pictureCamera();
-            }
-        });
-
-        Button galleryButton = findViewById(R.id.button_gallery);
-        galleryButton.setOnClickListener(new View.OnClickListener() {
-
-            public void onClick(View v) {
-                pictureGallery(v);
             }
         });
 
@@ -195,6 +227,8 @@ public class MainActivity extends Activity implements View.OnTouchListener, OnIt
             }
         });
 
+
+
         // Permission to access the gallery and camera :
 
         String[] PERMISSIONS_STORAGE = {
@@ -213,88 +247,112 @@ public class MainActivity extends Activity implements View.OnTouchListener, OnIt
         String item = parent.getItemAtPosition(position).toString();
 
         switch(item){
+
+            case("Laplacian Blurr"):
+                bmp = Convolution.laplaceFilter(bmp);
+                imageView1.setImageBitmap(bmp);
+                changesClass.setChange(bmp);
+                Toast.makeText(parent.getContext(), "laplacian filter", Toast.LENGTH_LONG).show();
+                break;
+
             case("Gray"):
                 bmp = Effects.toGray(bmp);
                imageView1.setImageBitmap(bmp);
-                Toast.makeText(parent.getContext(), "apply gray filter", Toast.LENGTH_LONG).show();
+               changesClass.setChange(bmp);
+                Toast.makeText(parent.getContext(), "Gray filter", Toast.LENGTH_LONG).show();
                 break;
             case("Colorize"):
                 bmp = Effects.colorize(bmp);
                 imageView1.setImageBitmap(bmp);
-                 Toast.makeText(parent.getContext(), "apply a colored filter", Toast.LENGTH_LONG).show();
+                changesClass.setChange(bmp);
+                 Toast.makeText(parent.getContext(), "applied a colored filter", Toast.LENGTH_LONG).show();
                  break;
 
             case("Dynamic extension"):
                 bmp = Effects.dynamicExtension(bmp);
                 imageView1.setImageBitmap(bmp);
+                changesClass.setChange(bmp);
                 Toast.makeText(parent.getContext(), "linear contrast", Toast.LENGTH_LONG).show();
                 break;
 
             case("Histogram gray"):
                 bmp = Effects.histogramEqualizationGray(bmp);
                 imageView1.setImageBitmap(bmp);
+                changesClass.setChange(bmp);
                 Toast.makeText(parent.getContext(), "contrast gray", Toast.LENGTH_LONG).show();
                 break;
 
             case("OverExposure"):
                 bmp = Effects.overExposure(bmp);
                 imageView1.setImageBitmap(bmp);
+                changesClass.setChange(bmp);
                 Toast.makeText(parent.getContext(), "over_exposure", Toast.LENGTH_LONG).show();
                 break;
 
             case("Histogram rgb"):
                 bmp = Effects.histogramEqualizationRGB(bmp);
                 imageView1.setImageBitmap(bmp);
+                changesClass.setChange(bmp);
                 Toast.makeText(parent.getContext(), "contrast color", Toast.LENGTH_LONG).show();
                 break;
 
             case("Blurr"):
                 bmp = Convolution.moyenneur(bmp);
                 imageView1.setImageBitmap(bmp);
+                changesClass.setChange(bmp);
                 Toast.makeText(parent.getContext(), "blurr", Toast.LENGTH_LONG).show();
                 break;
 
             case("Gaussian blurr"):
                 bmp = Convolution.gaussConvolution(bmp);
                 imageView1.setImageBitmap(bmp);
+                changesClass.setChange(bmp);
                 Toast.makeText(parent.getContext(), "gaussian blurr", Toast.LENGTH_LONG).show();
                 break;
 
             case("Sepia"):
                 bmp = Effects.sepia(bmp);
                 imageView1.setImageBitmap(bmp);
+                changesClass.setChange(bmp);
                 Toast.makeText(parent.getContext(), "Sepia filter", Toast.LENGTH_LONG).show();
                 break;
 
             case("Boost red"):
                 bmp = Effects.boost(bmp,1,40);
                 imageView1.setImageBitmap(bmp);
+                changesClass.setChange(bmp);
                 Toast.makeText(parent.getContext(), "boost red color", Toast.LENGTH_LONG).show();
                 break;
 
             case("Boost green"):
                 bmp = Effects.boost(bmp,2,30);
                 imageView1.setImageBitmap(bmp);
+                changesClass.setChange(bmp);
                 Toast.makeText(parent.getContext(), "boost green color", Toast.LENGTH_LONG).show();
                 break;
 
             case("Boost blue"):
                 bmp = Effects.boost(bmp,3,60);
                 imageView1.setImageBitmap(bmp);
+                changesClass.setChange(bmp);
                 Toast.makeText(parent.getContext(), "boost blue color", Toast.LENGTH_LONG).show();
                 break;
 
             case("Edge Detection"):
                 bmp = Convolution.edgeDetection(bmp);
                 imageView1.setImageBitmap(bmp);
+                changesClass.setChange(bmp);
                 Toast.makeText(parent.getContext(), "Edge detection filter", Toast.LENGTH_LONG).show();
+
                 break;
 
              case("Cartoon Effect"):
                 bmp = Effects.decreaseColorDepth(bmp);
                 imageView1.setImageBitmap(bmp);
-                Toast.makeText(parent.getContext(), "boost blue color", Toast.LENGTH_LONG).show();
+                Toast.makeText(parent.getContext(), "Cartoon Effect", Toast.LENGTH_LONG).show();
+                changesClass.setChange(bmp);
                 break;
+
             case("Brightness"):
 
                 Toast.makeText(parent.getContext(), "please select +  OR - ", Toast.LENGTH_LONG).show();
@@ -314,6 +372,7 @@ public class MainActivity extends Activity implements View.OnTouchListener, OnIt
                         imageView1.setImageBitmap(bmp);
                     }
                 });
+                changesClass.setChange(bmp);
 
                 break;
 
@@ -335,11 +394,12 @@ public class MainActivity extends Activity implements View.OnTouchListener, OnIt
                         imageView1.setImageBitmap(bmp);
                     }
                 });
-
+                changesClass.setChange(bmp);
                 break;
+
+
             case("Saturation"):
                 Toast.makeText(parent.getContext(), "please select +  OR - ", Toast.LENGTH_LONG).show();
-
                 Button increase_saturation = findViewById(R.id.button);
                 increase_saturation.setOnClickListener(new View.OnClickListener() {
                     public void onClick(View v) {
@@ -347,34 +407,29 @@ public class MainActivity extends Activity implements View.OnTouchListener, OnIt
                         imageView1.setImageBitmap(bmp);
                     }
                 });
-
                 Button decrease_saturation = findViewById(R.id.button2);
                 decrease_saturation.setOnClickListener(new View.OnClickListener() {
                     public void onClick(View v) {
                         bmp =Effects.saturation(bmp, -10);
                         imageView1.setImageBitmap(bmp);
+
                     }
                 });
+                changesClass.setChange(bmp);
 
-                break;
-
-
-            case("Reset the picture"):
-                bmp = bmp_final.copy(Bitmap.Config.ARGB_8888, true);
-                bmp.setDensity(originalBitmap.getDensity());
-                imageView1.setImageBitmap(bmp_final);
-                Toast.makeText(parent.getContext(), "the picture has been reset", Toast.LENGTH_LONG).show();
                 break;
 
             case ("Sketch"):
                 bmp = Effects.sketch(bmp);
                 imageView1.setImageBitmap(bmp);
+                changesClass.setChange(bmp);
                 Toast.makeText(parent.getContext(), "apply Sketch Effect", Toast.LENGTH_LONG).show();
             break;
 
             case ("Invert Effect"):
                 bmp = Effects.invert(bmp);
                 imageView1.setImageBitmap(bmp);
+                changesClass.setChange(bmp);
                 Toast.makeText(parent.getContext(), "apply Invert Effect", Toast.LENGTH_LONG).show();
 
 
@@ -387,13 +442,83 @@ public class MainActivity extends Activity implements View.OnTouchListener, OnIt
     }
 
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu){
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu,menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item){
+        switch (item.getItemId()){
+            case(R.id.camera):
+                 pictureCamera();
+                 return true ;
+            case(R.id.gallery):
+                 pictureGallery(imageView1);
+                 return true;
+
+            case(R.id.wallpaper):
+                setWallpaper();
+                return true;
+            case(R.id.share):
+                sharePicture();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+
+        }
+    }
+
+
+    public void setWallpaper(){
+        WallpaperManager wallpaperManager = WallpaperManager.getInstance(getApplicationContext());
+        try{
+            wallpaperManager.setBitmap(viewToBitmap(imageView1,imageView1.getWidth(),imageView1.getHeight()));
+            Toast.makeText(this,"New wallpaper",Toast.LENGTH_SHORT).show();
+        }
+        catch (IOException e){
+            e.printStackTrace();
+        }
+    }
+
+    public static Bitmap viewToBitmap(View view,int width, int height){
+        Bitmap b = Bitmap.createBitmap(width,height,Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(b);
+        view.draw(canvas);
+        return b;
+    }
+
+    public void  sharePicture(){
+        Bitmap b = bmp.copy(Bitmap.Config.ARGB_8888,true); // copy the original bitmap so we can reset it
+        b.setDensity(bmp.getDensity());
+        Intent shareIntent = new Intent(Intent.ACTION_SEND);
+        shareIntent.setType("picture/jpeg");
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        b.compress(Bitmap.CompressFormat.JPEG,100,out);
+        File file = new File(Environment.getExternalStorageDirectory()+ File.separator+"Picture.jpg");
+        try {
+            file.createNewFile();
+            FileOutputStream outFile = new FileOutputStream(file);
+            outFile.write(out.toByteArray());
+
+        }catch(IOException e){
+            e.printStackTrace();
+
+        }
+        shareIntent.putExtra(Intent.EXTRA_STREAM, Uri.parse("file:///sdcard/Picture.jpg"));
+        startActivity(Intent.createChooser(shareIntent,"Share Picture"));
+
+    }
+
+
+
     /**
      * Function that allows the use of the camera to process a picture if the permission is granted
      The picture is saved in a file named "CAM APP" in your phone
-     it requires API 23 or higher
      */
 
-    @RequiresApi(api = Build.VERSION_CODES.M)
       public void pictureCamera() {
 
         if (ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.CAMERA)
@@ -426,10 +551,8 @@ public class MainActivity extends Activity implements View.OnTouchListener, OnIt
     /**
      * function that asks for permission to look in the gallery using function uploadFromGallery to
      process a picture from the gallery of your phone
-     * it needs API 23 or higher
      * @param v
      */
-    @RequiresApi(api = Build.VERSION_CODES.M)
 
     public void pictureGallery(View v) {
 
@@ -462,28 +585,48 @@ public class MainActivity extends Activity implements View.OnTouchListener, OnIt
 
 
     /**
-     * save the processed picture in pictures in files directory
-     */
+     * save the processed picture in Image_processing folder in the gallery*/
 
-    @RequiresApi(api = Build.VERSION_CODES.M)
-    public void save() {
-        // Verification of permissions
-        if (ContextCompat.checkSelfPermission(getApplicationContext(),
-                Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
-            Bitmap bitmap = ((BitmapDrawable) imageView1.getDrawable()).getBitmap();
-
-            ContentResolver cr = getContentResolver();
-            String title = "Bitmap";
-            String description = " New Bitmap";
-            String savedURL = MediaStore.Images.Media.insertImage(cr, bitmap, title, description);
-
-            Toast.makeText(MainActivity.this, savedURL, Toast.LENGTH_LONG).show();
-        } else {
-            requestPermissions(
-                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE
-                    }, REQUEST_EXTERNAL_STORAGE);
+    public void save(){
+        FileOutputStream fileout = null;
+        File file = getDisc();
+        if(!file.exists() && !file.mkdirs()) {
+            Toast.makeText(this, "Image saving error", Toast.LENGTH_SHORT).show();
+            return;
         }
+        SimpleDateFormat sdf =new SimpleDateFormat(("yyyymmsshhmmss"));
+        String date = sdf.format(new Date());
+        String name= "Img" +date+".jpg";
+        String file_name = file.getAbsolutePath()+"/"+name;
+        File new_file = new File(file_name);
+        try{
+             fileout = new FileOutputStream(new_file);
+             Bitmap b = viewToBitmap(imageView1, imageView1.getWidth(), imageView1.getHeight());
+             b.compress(Bitmap.CompressFormat.JPEG,100,fileout);
+             Toast.makeText(this, "Image saved", Toast.LENGTH_SHORT).show();
+             fileout.flush();
+             fileout.close();
+
+        }catch (FileNotFoundException e){
+            e.printStackTrace();
+        }catch (IOException e){
+            e.printStackTrace();
+        }
+        refreshGallery(new_file);
+
     }
+
+    private File getDisc(){
+        File file = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM);
+        return new File(file,"Image_Processing");
+    }
+
+    public void refreshGallery(File file){
+        Intent intent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+        intent.setData(Uri.fromFile(file));
+        sendBroadcast(intent);
+    }
+
 
     /**
      *function that gives the result of uploading a picture from the gallery or taking it with the camera.
@@ -525,6 +668,7 @@ public class MainActivity extends Activity implements View.OnTouchListener, OnIt
                 bmp_final = bmp.copy(Bitmap.Config.ARGB_8888,true);
                 bmp_final.setDensity(originalBitmap.getDensity());
                 imageView1.setImageBitmap(bmp);
+                changesClass.setChange(bmp);
 
 
             }
@@ -570,6 +714,7 @@ public class MainActivity extends Activity implements View.OnTouchListener, OnIt
                     bmp_final = putImage.copy(Bitmap.Config.ARGB_8888,true);
                     bmp_final.setDensity(originalBitmap.getDensity());
                     imageView1.setImageBitmap(putImage);
+                    changesClass.setChange(bmp);
                 }
                 else{
                     bmp = null;
@@ -638,123 +783,96 @@ public class MainActivity extends Activity implements View.OnTouchListener, OnIt
      * @return boolean
      */
 
-    public boolean onTouch(View v, MotionEvent event) {
-        ImageView view = (ImageView) v;
-        view.setScaleType(ImageView.ScaleType.MATRIX);
-        float scale;
+    @Override
+        public boolean onTouch(View v, MotionEvent event) {
+            float newRot;
+            // handle touch events here
+            ImageView view = (ImageView) v;
+            view.setScaleType(ImageView.ScaleType.MATRIX);
+            float scale;
 
-        Zoom.dumpEvent(event);  // Handle touch events here...
-
-        switch (event.getActionMasked()) {
-            case MotionEvent.ACTION_DOWN:   // first finger down only
-                savedMatrix.set(matrix);
-                start.set(event.getX(), event.getY());
-                Log.d(TAG, "mode=DRAG"); // write to LogCat
-                mode = DRAG;
-                break;
-
-            case MotionEvent.ACTION_POINTER_UP: // second finger lifted
-
-                mode = NONE;
-                Log.d(TAG, "mode=NONE");
-                break;
-
-            case MotionEvent.ACTION_POINTER_DOWN: // first and second finger down
-
-                oldDist = Zoom.spacing(event);
-                Log.d(TAG, "oldDist=" + oldDist);
-                if (oldDist > 5f) {
+            Zoom.dumpEvent(event);
+            switch (event.getAction() & MotionEvent.ACTION_MASK) {
+                case MotionEvent.ACTION_DOWN:
                     savedMatrix.set(matrix);
-                    Zoom.midPoint(mid, event);
-                    mode = ZOOM;
-                    Log.d(TAG, "mode=ZOOM");
-                }
-                break;
-
-            case MotionEvent.ACTION_MOVE:
-
-                if (mode == DRAG) { // scroll
-                    matrix.set(savedMatrix);
-                    // create the transformation in the matrix  of points
-                    matrix.postTranslate(event.getX() - start.x, event.getY() - start.y);
-                } else if (mode == ZOOM) {
-                    // pinch zooming
-                    float newDist = Zoom.spacing(event);
-                    Log.d(TAG, "newDist=" + newDist);
-                    if (newDist > 5f) {
-                        matrix.set(savedMatrix);
-                        scale = newDist / oldDist; // setting the scaling of the
-                        // matrix...if scale > 1 means
-                        // zoom in...if scale < 1 means
-                        // zoom out
-                        matrix.postScale(scale, scale, mid.x, mid.y);
+                    start.set(event.getX(), event.getY());
+                    mode = DRAG;
+                    lastEvent = null;
+                    break;
+                case MotionEvent.ACTION_POINTER_DOWN:
+                    oldDist = Zoom.spacing(event);
+                    if (oldDist > 10f) {
+                        savedMatrix.set(matrix);
+                        Zoom.midPoint(mid, event);
+                        mode = ZOOM;
                     }
-                }
-                break;
+                    lastEvent = new float[4];
+                    lastEvent[0] = event.getX(0);
+                    lastEvent[1] = event.getX(1);
+                    lastEvent[2] = event.getY(0);
+                    lastEvent[3] = event.getY(1);
+                    d = Zoom.rotation(event);
+                    break;
+                case MotionEvent.ACTION_UP:
+                case MotionEvent.ACTION_POINTER_UP:
+                    mode = NONE;
+                    lastEvent = null;
+                    break;
+                case MotionEvent.ACTION_MOVE:
+                    if (mode == DRAG ) {
+                        matrix.set(savedMatrix);
+                        float dx = event.getX() - start.x;
+                        float dy = event.getY() - start.y;
+                        matrix.postTranslate(dx, dy);
+                    } else if (mode == ZOOM) {
+                        float newDist = Zoom.spacing(event);
+                        if (newDist > 10f) {
+                            matrix.set(savedMatrix);
+                            scale = (newDist / oldDist);
+                            matrix.postScale(scale, scale, mid.x, mid.y);
+                        }
+                        if (lastEvent != null && event.getPointerCount() == 3) {
+                            newRot = Zoom.rotation(event);
+                            float r = newRot - d;
+                            float[] values = new float[9];
+                            matrix.getValues(values);
+                            float tx = values[2];
+                            float ty = values[5];
+                            float sx = values[0];
+                            float xc = (view.getWidth() / 2) * sx;
+                            float yc = (view.getHeight() / 2) * sx;
+                            matrix.postRotate(r, tx + xc, ty + yc);
+                        }
+                    }
+                    break;
+            }
+
+            view.setImageMatrix(matrix);
+            return true;
         }
-
-        view.setImageMatrix(matrix); // display the transformation on screen
-
-        return true; // indicate event was handled
-    }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

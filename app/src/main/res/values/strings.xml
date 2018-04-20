@@ -1,4 +1,7 @@
 <resources>
-    <string name="app_name">AndroidStudio Project</string>
+    <string name="app_name">Image Processing App</string>
     <string name="title_activity_splash_screen">SplashScreen</string>
+    <string name="camera">camera</string>
+    <string name="gallery">gallery</string>
+
 </resources>
