@@ -53,18 +53,14 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements View.OnTouchListener, OnItemSelectedListener {
 
-
+   //initialize variables
     private Bitmap originalBitmap;
     private Bitmap bmp;
     private Bitmap bmp_final;
     private ImageView imageView1;
-    private RenderScript mRS1;
-    private RenderScript mRS_final;
     private Changes changesClass = new Changes();
 
-
-
-    // variables for zoom :
+    // initialize variables for zoom :
        // 1-fingers
     static final int NONE = 0;
     static final int DRAG = 1;
@@ -81,7 +77,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     private float[] lastEvent = null;
     private float d = 0f;
 
-    // variables : save and load a picture :
+    //initialize variables to save and load a picture :
     private  static  final  int  CAMERA_REQUEST = 1888;
     private static int REQUEST_EXTERNAL_STORAGE = 1;
     public static String SaveFileName;
@@ -109,18 +105,17 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         o.inScaled = false;
         o.inMutable = true;
 
-        imageView1 = (ImageView)findViewById(R.id.imageView);
+        imageView1 = findViewById(R.id.imageView);
         originalBitmap =BitmapFactory.decodeResource(getResources(), R.drawable.test, o);
 
 
         bmp = originalBitmap.copy(Bitmap.Config.ARGB_8888,true); // copy the original bitmap so we can reset it
         bmp.setDensity(originalBitmap.getDensity());
 
-        mRS1 = RenderScript.create(this);
 
-        bmp_final = (Bitmap) originalBitmap.copy(Bitmap.Config.ARGB_8888, true);
+
+        bmp_final = originalBitmap.copy(Bitmap.Config.ARGB_8888, true);
         bmp_final.setDensity(originalBitmap.getDensity());
-        mRS_final = RenderScript.create(this);
         imageView1.setImageBitmap(bmp);
 
 
@@ -131,7 +126,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         spinner.setOnItemSelectedListener(this);
 
         // Spinner Drop down elements
-        List<String> categories = new ArrayList<String>();
+        List<String> categories = new ArrayList<>();
         categories.add("Drop down to select a filter");
         categories.add("Boost blue");
         categories.add("Boost green");
@@ -145,17 +140,18 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         categories.add("Edge Detection");
         categories.add("Gaussian blurr");
         categories.add("Gray");
+        categories.add("Gray renderScript");
         categories.add("Histogram gray");
+        categories.add("Histogram renderScript");
         categories.add("Histogram rgb");
         categories.add("Invert Effect");
-        categories.add("Laplacian Blurr");
+        categories.add("Laplacian Filter");
         categories.add("OverExposure");
-        categories.add("Saturation");
         categories.add("Sepia");
         categories.add("Sketch");
 
         // Creating adapter for spinner
-        ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, categories);
+        ArrayAdapter<String> dataAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, categories);
 
         // Drop down layout style - list view with radio button
         dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -165,8 +161,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         imageView1.setOnTouchListener(this);
 
 
-        // BUTTON :
-
+        // create button :
 
         Button undoButton =  findViewById(R.id.undo);
         undoButton.setOnClickListener(new View.OnClickListener() {
@@ -174,10 +169,9 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             public void onClick(View v) {
                 if (Changes.change != -1) {
                     bmp = changesClass.getLastChange();
-                    imageView1.setImageBitmap(bmp);
-                }
-            }
-        });
+                    imageView1.setImageBitmap(bmp);}}});
+
+
         Button redoButton =  findViewById(R.id.redo);
         redoButton.setOnClickListener(new View.OnClickListener() {
 
@@ -236,9 +230,9 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 Manifest.permission.WRITE_EXTERNAL_STORAGE
         };
 
-
-
     }
+
+
 
     @Override
     public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
@@ -248,7 +242,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
         switch(item){
 
-            case("Laplacian Blurr"):
+            case("Laplacian Filter"):
                 bmp = Convolution.laplaceFilter(bmp);
                 imageView1.setImageBitmap(bmp);
                 changesClass.setChange(bmp);
@@ -256,11 +250,19 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 break;
 
             case("Gray"):
-                bmp = Effects.toGray(bmp);
+                bmp =Effects.toGray(bmp);
                imageView1.setImageBitmap(bmp);
                changesClass.setChange(bmp);
                 Toast.makeText(parent.getContext(), "Gray filter", Toast.LENGTH_LONG).show();
                 break;
+
+            case("Gray renderScript"):
+                Effects.toGreyRS(bmp,this);
+               imageView1.setImageBitmap(bmp);
+               changesClass.setChange(bmp);
+                Toast.makeText(parent.getContext(), "Gray filter with render script", Toast.LENGTH_LONG).show();
+                break;
+
             case("Colorize"):
                 bmp = Effects.colorize(bmp);
                 imageView1.setImageBitmap(bmp);
@@ -279,7 +281,13 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 bmp = Effects.histogramEqualizationGray(bmp);
                 imageView1.setImageBitmap(bmp);
                 changesClass.setChange(bmp);
-                Toast.makeText(parent.getContext(), "contrast gray", Toast.LENGTH_LONG).show();
+                break;
+
+             case("Histogram renderScript"):
+                bmp = Effects.histogramEqualization(bmp,this);
+                imageView1.setImageBitmap(bmp);
+                changesClass.setChange(bmp);
+                 Toast.makeText(parent.getContext(), "contrast with render script", Toast.LENGTH_LONG).show();
                 break;
 
             case("OverExposure"):
@@ -293,7 +301,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 bmp = Effects.histogramEqualizationRGB(bmp);
                 imageView1.setImageBitmap(bmp);
                 changesClass.setChange(bmp);
-                Toast.makeText(parent.getContext(), "contrast color", Toast.LENGTH_LONG).show();
+
                 break;
 
             case("Blurr"):
@@ -357,66 +365,46 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
                 Toast.makeText(parent.getContext(), "please select +  OR - ", Toast.LENGTH_LONG).show();
 
-                Button increase_brightness = findViewById(R.id.button);
+                Button increase_brightness = findViewById(R.id.buttonPlus);
                 increase_brightness.setOnClickListener(new View.OnClickListener() {
                     public void onClick(View v) {
                         bmp = Effects.brightness(bmp, 10);
                         imageView1.setImageBitmap(bmp);
+                         changesClass.setChange(bmp);
                     }
                 });
 
-                Button decrease_brightness = findViewById(R.id.button2);
+                Button decrease_brightness = findViewById(R.id.buttonMoins);
                 decrease_brightness.setOnClickListener(new View.OnClickListener() {
                     public void onClick(View v) {
                         bmp =Effects.brightness(bmp, -10);
                         imageView1.setImageBitmap(bmp);
+                         changesClass.setChange(bmp);
                     }
                 });
-                changesClass.setChange(bmp);
 
                 break;
 
             case("Contrast"):
                 Toast.makeText(parent.getContext(), "please select +  OR - ", Toast.LENGTH_LONG).show();
 
-                Button increase_contrast = findViewById(R.id.button);
+                Button increase_contrast = findViewById(R.id.buttonPlus);
                 increase_contrast.setOnClickListener(new View.OnClickListener() {
                     public void onClick(View v) {
                         bmp = Effects.contrast(bmp, 10);
                         imageView1.setImageBitmap(bmp);
+                        changesClass.setChange(bmp);
                     }
                 });
 
-                Button decrease_contrast= findViewById(R.id.button2);
+                Button decrease_contrast= findViewById(R.id.buttonMoins);
                 decrease_contrast.setOnClickListener(new View.OnClickListener() {
                     public void onClick(View v) {
                         bmp =Effects.contrast(bmp, -10);
                         imageView1.setImageBitmap(bmp);
+                        changesClass.setChange(bmp);
                     }
                 });
-                changesClass.setChange(bmp);
-                break;
-
-
-            case("Saturation"):
-                Toast.makeText(parent.getContext(), "please select +  OR - ", Toast.LENGTH_LONG).show();
-                Button increase_saturation = findViewById(R.id.button);
-                increase_saturation.setOnClickListener(new View.OnClickListener() {
-                    public void onClick(View v) {
-                        bmp = Effects.saturation(bmp, 10);
-                        imageView1.setImageBitmap(bmp);
-                    }
-                });
-                Button decrease_saturation = findViewById(R.id.button2);
-                decrease_saturation.setOnClickListener(new View.OnClickListener() {
-                    public void onClick(View v) {
-                        bmp =Effects.saturation(bmp, -10);
-                        imageView1.setImageBitmap(bmp);
-
-                    }
-                });
-                changesClass.setChange(bmp);
-
                 break;
 
             case ("Sketch"):
@@ -471,6 +459,11 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         }
     }
 
+    /**
+     * function that uses wallpapermanager and with permissions given (manifest)
+     * to put the filtered bitmap as a wallpaper on the device.
+     * @author https://www.youtube.com/watch?v=hSv5m1-3u-o
+     * */
 
     public void setWallpaper(){
         WallpaperManager wallpaperManager = WallpaperManager.getInstance(getApplicationContext());
@@ -483,12 +476,25 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         }
     }
 
+    /**
+     * function that draw a bitmap on a canvas
+     * @param view
+     * @param width
+     * @param height
+     * @author :https://www.youtube.com/watch?v=hSv5m1-3u-o
+     * @return
+     */
     public static Bitmap viewToBitmap(View view,int width, int height){
         Bitmap b = Bitmap.createBitmap(width,height,Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(b);
         view.draw(canvas);
         return b;
     }
+
+    /**
+     * function that allows you to share the picture filtered with your contacts if you have internet
+     *@author :https://www.youtube.com/watch?v=hSv5m1-3u-o
+     */
 
     public void  sharePicture(){
         Bitmap b = bmp.copy(Bitmap.Config.ARGB_8888,true); // copy the original bitmap so we can reset it
@@ -585,10 +591,12 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
 
     /**
-     * save the processed picture in Image_processing folder in the gallery*/
+     * save the processed picture in Image_processing folder in the gallery
+     * @author :https://www.youtube.com/watch?v=hSv5m1-3u-o
+     * */
 
     public void save(){
-        FileOutputStream fileout = null;
+        FileOutputStream fileOut = null;
         File file = getDisc();
         if(!file.exists() && !file.mkdirs()) {
             Toast.makeText(this, "Image saving error", Toast.LENGTH_SHORT).show();
@@ -600,12 +608,12 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         String file_name = file.getAbsolutePath()+"/"+name;
         File new_file = new File(file_name);
         try{
-             fileout = new FileOutputStream(new_file);
+             fileOut = new FileOutputStream(new_file);
              Bitmap b = viewToBitmap(imageView1, imageView1.getWidth(), imageView1.getHeight());
-             b.compress(Bitmap.CompressFormat.JPEG,100,fileout);
+             b.compress(Bitmap.CompressFormat.JPEG,100,fileOut);
              Toast.makeText(this, "Image saved", Toast.LENGTH_SHORT).show();
-             fileout.flush();
-             fileout.close();
+             fileOut.flush();
+             fileOut.close();
 
         }catch (FileNotFoundException e){
             e.printStackTrace();
@@ -729,7 +737,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
     /**
      * function that decodes a file containing the picture that you want to process
-     * @author  stackOverFlow
+     * @author  stackOverFlow https://stackoverflow.com/questions/21229917/android-capture-and-display-image-app
      * @param f  = file
      * @return a bitmap
      */

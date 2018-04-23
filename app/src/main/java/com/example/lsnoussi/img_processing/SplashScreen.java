@@ -22,23 +22,6 @@ public class SplashScreen extends AppCompatActivity {
         AppCompatDelegate.setCompatVectorFromResourcesEnabled(true);
         setContentView(R.layout.activity_splash_screen);
 
-
-
-        /*new android.os.Handler().postDelayed(new Runnable() {
-
-
-       /* @Override
-        public void run() {
-            // This method will be executed once the timer is over
-            // Start your app main activity
-            Intent i = new Intent(getApplicationContext(), MainActivity.class);
-           startActivity(i);
-
-
-        finish();
-        }
-    }, 4000);*/
-
        Thread thread = new Thread(){
             @Override
             public void run(){

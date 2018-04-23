@@ -1,18 +1,13 @@
 package com.example.lsnoussi.img_processing;
 
+import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.ColorFilter;
-import android.graphics.LightingColorFilter;
-import android.graphics.Matrix;
-import android.graphics.Paint;
-import android.graphics.PorterDuff;
-import android.graphics.PorterDuffColorFilter;
-import android.nfc.Tag;
-import android.util.Log;
 
 import java.util.Random;
+
+import android.support.v8.renderscript.RenderScript;
+import android.support.v8.renderscript.Allocation;
 
 /**
  * Created by lsnoussi on 07/03/18.
@@ -21,16 +16,16 @@ import java.util.Random;
 public class Effects {
 
 
-    /**
+    /** take a bitmap as a parameter.
+     *  function to gray a bitmap using a tab of pixels
      *  @param bmp
-     *           @return Bitmap
-
-     * take a bitmap as a parameter.
-     *  function to gray a bitmap using a tab of pixels */
+     *   @return Bitmap
+     */
 
 
-    public static Bitmap toGray(Bitmap bmp) {
+    public static Bitmap toGray(Bitmap bmp ) {
         long start = System.currentTimeMillis();
+
 
         int w = bmp.getWidth();
         int h = bmp.getHeight();
@@ -38,8 +33,10 @@ public class Effects {
         Bitmap result = Bitmap.createBitmap(bmp.getWidth(), bmp.getHeight(), bmp.getConfig());
         result.setDensity(bmp.getDensity());
 
+
         int[] pixels = new int[w * h];
         bmp.getPixels(pixels, 0, w, 0, 0, w, h);
+
         for (int i = 0; i < pixels.length; ++i) {
             int r = Color.red(pixels[i]);
             int g = Color.green(pixels[i]);
@@ -49,44 +46,46 @@ public class Effects {
         }
 
         result.setPixels(pixels, 0, w, 0, 0, w, h);
+
         long end = System.currentTimeMillis();
-         System.out.println(end - start);
+        System.out.println(end - start);
 
         return result;
 
     }
 
-     public static void toGrayVoid(Bitmap bmp) {
+    public static  void  toGreyRS (Bitmap  bmp, Context context) {
+
         long start = System.currentTimeMillis();
+        RenderScript  rs = RenderScript.create(context);
 
-        int w = bmp.getWidth();
-        int h = bmp.getHeight();
+        Allocation  input = Allocation.createFromBitmap(rs , bmp);
+        Allocation  output = Allocation.createTyped(rs , input.getType());
 
+        ScriptC_grey  greyScript = new  ScriptC_grey(rs);
 
-        int[] pixels = new int[w * h];
-        bmp.getPixels(pixels, 0, w, 0, 0, w, h);
-        for (int i = 0; i < pixels.length; ++i) {
-            int r = Color.red(pixels[i]);
-            int g = Color.green(pixels[i]);
-            int b = Color.blue(pixels[i]);
-            int gray = (int) (0.3 * r + 0.59 * g + b * 0.11);
-            pixels[i] = Color.rgb(gray, gray, gray);
-        }
+        greyScript.forEach_toGrey(input , output);
 
-        bmp.setPixels(pixels, 0, w, 0, 0, w, h);
-         long end = System.currentTimeMillis();
-         System.out.println(end - start);
+        output.copyTo(bmp);
 
+        input.destroy ();
+        output.destroy ();
+        greyScript.destroy ();
+        rs.destroy ();
+        long end = System.currentTimeMillis();
+        System.out.println(end - start);
 
     }
 
-    /**
 
+
+    /**
+     * take a bitmap as a parameter.
+     *  function to put a random colored filter on a bitmap
      *  @param bmp
      * @return Bitmap
 
-     * take a bitmap as a parameter.
-     *  function to put a random colored filter on a bitmap */
+    */
 
     public static Bitmap colorize (Bitmap bmp) {
         long start = System.currentTimeMillis();
@@ -129,16 +128,12 @@ public class Effects {
     }
 
 
-    // II-Contrast
 
-
-    // function that calculates the histogram of a bitmap given :
-
-    /**
+    /**function that calculates the histogram of a bitmap given
      *  @param bmp
      * take a bitmap as a parameter.
      *  @return a tab filled with the numb of pixels with gray level.
-     * function that calculates the histogram of a bitmap given */
+    */
 
     public static int[] histogram(Bitmap bmp) {
         long start = System.currentTimeMillis();
@@ -169,11 +164,11 @@ public class Effects {
     }
 
 
-    /**
+    /*** take a bitmap as a parameter.
+     *  function that calculates a linear transformation between [min,max] over 256 level of gray
      *  @param bmp
      *  @return Bitmap
-     * take a bitmap as a parameter.
-     *  function that calculates a linear transformation between [min,max] over 256 level of gray*/
+     * */
 
     public static Bitmap dynamicExtension(Bitmap bmp) {
         long start = System.currentTimeMillis();
@@ -240,11 +235,11 @@ public class Effects {
 
 
 
-    /**
+    /**  take a bitmap as a parameter.
+     *  function that forces the levels of gray to be organized between 0 and 255
      *  @param bmp
      *  @return Bitmap
-     * take a bitmap as a parameter.
-     *  function that forces the levels of gray to be organized between 0 and 255 */
+    */
 
     public static Bitmap histogramEqualizationGray(Bitmap bmp) {
 
@@ -254,6 +249,8 @@ public class Effects {
         int h = bmp.getHeight();
         Bitmap result = Bitmap.createBitmap(bmp.getWidth(), bmp.getHeight(), bmp.getConfig());
         result.setDensity(bmp.getDensity());
+
+
         int[] pixels = new int[h * w];
 
         int[] hist = histogram(bmp);
@@ -277,17 +274,18 @@ public class Effects {
         }
 
         result.setPixels(pixels, 0, w, 0, 0, w, h);
-        toGrayVoid(result);
+        result = toGray(result);
         long end = System.currentTimeMillis();
         System.out.println(end - start);
+
         return result;
 
     }
-    /**
+    /**take a bitmap as a parameter.
+     *  same thing as histogramEqualization_gray but without graying the bitmap first
      *  @param bmp
      *  @return Bitmap
-     * take a bitmap as a parameter.
-     *  same thing as histogramEqualization_gray but without graying the bitmap first */
+     * */
 
 
     public static Bitmap histogramEqualizationRGB(Bitmap bmp) {
@@ -298,6 +296,7 @@ public class Effects {
         Bitmap result = Bitmap.createBitmap(bmp.getWidth(), bmp.getHeight(), bmp.getConfig());
         result.setDensity(bmp.getDensity());
         int[] pixels = new int[h * w];
+
 
 
         int[] hist = histogram(bmp);
@@ -323,9 +322,57 @@ public class Effects {
         result.setPixels(pixels, 0, w, 0, 0, w, h);
         long end = System.currentTimeMillis();
         System.out.println(end - start);
+
         return result;
 
 
+    }
+
+    public static Bitmap histogramEqualization(Bitmap image, Context context) {
+
+        long start = System.currentTimeMillis();
+        //Get image size
+        int width = image.getWidth();
+        int height = image.getHeight();
+
+        //Create new bitmap
+        Bitmap res = image.copy(image.getConfig(), true);
+
+        //Create renderscript
+        RenderScript rs = RenderScript.create(context);
+
+        //Create allocation from Bitmap
+        Allocation allocationA = Allocation.createFromBitmap(rs, res);
+
+        //Create allocation with same type
+        Allocation allocationB = Allocation.createTyped(rs, allocationA.getType());
+
+        //Create script from rs file.
+        ScriptC_histEq histEqScript = new ScriptC_histEq(rs);
+
+        //Set size in script
+        histEqScript.set_size(width*height);
+
+        //Call the first kernel.
+        histEqScript.forEach_root(allocationA, allocationB);
+
+        //Call the rs method to compute the remap array
+        histEqScript.invoke_createRemapArray();
+
+        //Call the second kernel
+        histEqScript.forEach_remaptoRGB(allocationB, allocationA);
+
+        //Copy script result into bitmap
+        allocationA.copyTo(res);
+
+        //Destroy everything to free memory
+        allocationA.destroy();
+        allocationB.destroy();
+        histEqScript.destroy();
+        rs.destroy();
+        long end = System.currentTimeMillis();
+        System.out.println(end - start);
+        return res;
     }
 
 
@@ -423,11 +470,11 @@ public class Effects {
 }
 
     /**
-     *
-     * @param bmp
-     * @return Bitmap
      * take a bitmap as a parameter.
      * function that brighten a picture using an histogram for every R,G,B
+     * @param bmp
+     * @return Bitmap
+     *
      */
 
     public static Bitmap overExposure(Bitmap bmp) {
@@ -488,7 +535,8 @@ public class Effects {
     }
 
     /**
-     * Function  sepia effect
+     * Function  sepia effect that changes the every canal to gray ,
+     * then we add 94 to the red pixel , 38 to the green pixel and  18 to the blue pixel
      *
      * @param bmp
      * @return Bitmap
@@ -721,56 +769,8 @@ public class Effects {
     }
 
 
-
-    /**
-     * changes the saturation
-     * @param bmp
-     * @param s the value we want to increase or decrease the saturation by
-     * @return
-     */
-    public static Bitmap saturation(Bitmap bmp, float s) {
-        long start = System.currentTimeMillis();
-
-        int width = bmp.getWidth();
-        int height = bmp.getHeight();
-
-        int[] pixels = new int[width * height];
-
-        bmp.getPixels(pixels, 0, bmp.getWidth(), 0, 0, bmp.getWidth(), bmp.getHeight());
-
-
-        for (int i = 0; i < height * width; ++i) {
-
-            int r = Color.red(pixels[i]);
-            int g = Color.green(pixels[i]);
-            int b = Color.blue(pixels[i]);
-
-            float[] hsv = new float[3];
-
-            // Space changing
-            Color.RGBToHSV(r, g, b, hsv);
-            hsv[1] += s;
-
-            if (hsv[1] > 1) {
-                hsv[1] = 1;
-            }else if (hsv[1] < 0) {
-                hsv[1] = 0;
-            }
-
-            pixels[i] = Color.HSVToColor(hsv);
-        }
-
-        bmp.setPixels(pixels, 0, width, 0, 0, width, height);
-
-        long end = System.currentTimeMillis();
-        System.out.println(end - start);
-
-        return bmp;
-}
-
      /**
      * Function that invert a given bitmap's color
-     *
      * @param bmp
      * @return Bitmap
      *
@@ -799,8 +799,7 @@ public class Effects {
         System.out.println(end - start);
 
         return bmp;
-}
-
+    }
 
 }
 

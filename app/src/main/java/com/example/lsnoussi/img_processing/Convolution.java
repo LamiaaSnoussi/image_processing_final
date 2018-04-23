@@ -141,9 +141,10 @@ public class Convolution {
     }
 
     /**
-     * Sobel
+     *function that look for values that have a brutal light intensity
+     * by applying the method of extremums of the first derivative
      * @param bmp
-     * @return
+     * @return a bitmap
      */
 
     public static Bitmap edgeDetection(Bitmap bmp){
@@ -184,42 +185,30 @@ public class Convolution {
         return result;
     }
 
+
+
     /**
-     *
-     * @param bmp
-     * @return
+     * return an array of int that contains the previous pixel of coordinates i, j
+     * @param mask
+     * @param p
+     * @param i
+     * @param j
+     * @param width
+     * @param tab
+     * @return tab
      */
-
-    public static Bitmap laplaceFilter(Bitmap bmp){
-
-        Bitmap result = Bitmap.createBitmap(bmp.getWidth(), bmp.getHeight(), bmp.getConfig());
-        result.setDensity(bmp.getDensity());
-        int[] pixel = new int[bmp.getWidth()*bmp.getHeight()];
-        int  masque [] []= new int[][]{{-2, -1,0}, {-1, 1, 1}, {0, 1, 2}};
-        bmp.getPixels(pixel,0,bmp.getWidth(),0,0,bmp.getWidth(),bmp.getHeight());
-        int[] tab = pixel;
-        int n = masque.length/2;
-        for(int i = n; i<bmp.getWidth() - n; i++){
-            for(int j = n; j<bmp.getHeight() - n; j++){
-                tab=Laplace(masque,pixel,i,j,bmp.getWidth(), tab);
-            }
-        }
-        result.setPixels(tab,0,bmp.getWidth(),0,0,bmp.getWidth(),bmp.getHeight());
-        return result;
-    }
-
-    public static int[] Laplace(int[][] masque, int[] p,int i, int j, int largeur, int[] tab){
-        int n = masque.length/2;
+    public static int[] Laplace(int[][] mask, int[] p,int i, int j, int width, int[] tab){
+        int n = mask.length/2;
         int rr=0,gg=0,bb=0;
         for(int k = -n; k<=n; k++) {
             for (int l = -n; l <= n; l++) {
-                int pp = p[(i + k)  + (j + l) * largeur];
+                int pp = p[(i + k)  + (j + l) * width];
                 int r = Color.red(pp);
                 int g = Color.green(pp);
                 int b = Color.blue(pp);
-                rr = rr + masque[k + n][l + n] * r;
-                gg = gg + masque[k + n][l + n] * g;
-                bb = bb + masque[k + n][l + n] * b;
+                rr = rr + mask[k + n][l + n] * r;
+                gg = gg + mask[k + n][l + n] * g;
+                bb = bb + mask[k + n][l + n] * b;
             }
         }
         if(rr>0){
@@ -248,11 +237,38 @@ public class Convolution {
         }
         int gris = (int) (rr * 0.3 + gg * 0.59 + bb * 0.11);
         int encode = Color.rgb(gris, gris, gris);
-        tab[i + j * largeur] = encode;
+        tab[i + j * width] = encode;
         return tab;
 
+    }
 
+    /**
+     * apply laplace function seen before to every pixel of a bitmap
+     * @param bmp
+     * @return a bitmap
+     */
 
+    public static Bitmap laplaceFilter(Bitmap bmp){
+
+        long start = System.currentTimeMillis();
+
+        Bitmap result = Bitmap.createBitmap(bmp.getWidth(), bmp.getHeight(), bmp.getConfig());
+        result.setDensity(bmp.getDensity());
+        int[] pixel = new int[bmp.getWidth()*bmp.getHeight()];
+        int  masque [] []= new int[][]{{-2, -1,0}, {-1, 1, 1}, {0, 1, 2}};
+        bmp.getPixels(pixel,0,bmp.getWidth(),0,0,bmp.getWidth(),bmp.getHeight());
+        int[] tab = pixel;
+        int n = masque.length/2;
+        for(int i = n; i<bmp.getWidth() - n; i++){
+            for(int j = n; j<bmp.getHeight() - n; j++){
+                tab=Laplace(masque,pixel,i,j,bmp.getWidth(), tab);
+            }
+        }
+        result.setPixels(tab,0,bmp.getWidth(),0,0,bmp.getWidth(),bmp.getHeight());
+
+        long end = System.currentTimeMillis();
+        System.out.println(end - start);
+        return result;
     }
 
 
